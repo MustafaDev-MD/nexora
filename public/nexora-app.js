@@ -437,7 +437,11 @@ function frame(now){
 
   var wsec = secs.portfolio; if(wsec){ var wpv = clamp((y + S.vh - wsec.top)/(wsec.h + S.vh), 0, 1).toFixed(3); root.style.setProperty('--wp', wpv); }
 
-  if(GL) GL.update(t, dt);
+  /* when idle (almost no scroll), render GL every 2nd frame to cut main-thread load */
+  if(GL){
+    if(Math.abs(S.vel) > 8 || !GL._tick){ GL.update(t, dt); GL._tick = 1; }
+    else { GL._tick = 0; }
+  }
 }
 function loop(now){ frame(now); if(!doc.hidden) requestAnimationFrame(loop); else running = false; }
 function schedule(){ if(!scheduled && reduce){ scheduled = true; requestAnimationFrame(frame); } }

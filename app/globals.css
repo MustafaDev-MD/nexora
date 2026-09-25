@@ -16,8 +16,8 @@
   --b1:#38bdf8;
   --grad:linear-gradient(90deg,#8b5cf6 0%,#a855f7 45%,#6b8cff 100%);
   --grad-btn:linear-gradient(90deg,#6d3bff,#8b4dff);
-  --font-head:'Sora',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-head:var(--font-sora),system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-body:var(--font-inter),system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   --gutter:clamp(18px,4vw,40px);
   --nav-h:68px;
 }
