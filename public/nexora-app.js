@@ -68,7 +68,7 @@ var tl = $('#tl'), steps = $$('.step', tl), tlTop = 0, tlH = 1, tlLast = -1;
 var hero = $('[data-hero]'), heroH = 1, heroTop = 0;
 var orbAnchor = $('#orbAnchor'), A = {hero:{cx:0,cy:0,w:1}, cta:{cx:0,cy:0,w:1,alpha:1}};
 var ctaEl = $('#cta');
-var secIds = ['home','about','services','portfolio','process','testimonials','pricing','faq','blog','contact'];
+var secIds = ['home','stats','about','services','portfolio','process','testimonials','pricing','faq','blog','contact'];
 var secs = {};
 
 function measure(){
@@ -297,7 +297,6 @@ function initGL(){
 
   var intro = 0, t0 = performance.now()/1000;
   function update(t, dt){
-    /* choose which anchor the orb sits on: hero first, CTA at the end */
     var onHero = (S.y < heroTop + heroH*.98);
     var a = onHero ? A.hero : A.cta;
     var sy = a.cy - S.y, sc = a.w*.42;
@@ -324,7 +323,6 @@ function initGL(){
       pts.rotation.y = tt*.05; pts.rotation.x = tt*.03;
       var pulse = 1 + .03*Math.sin(tt*1.4); core.scale.setScalar(pulse); halo.material.rotation = tt*.05;
     }
-    /* crystals */
     var small = S.vw < 700, kScale = small ? .62 : (S.vw < 1100 ? .8 : 1);
     shapes.forEach(function(s){
       var sec = secs[s.d.id];
@@ -402,13 +400,11 @@ function frame(now){
   var v = (y - S.y)/dt; S.vel += (v - S.vel)*Math.min(1, dt*9); if(reduce) S.vel = 0;
   S.y = y;
 
-  /* progress bar + hero scroll var */
   root.style.setProperty('--sp', S.maxY ? (y/S.maxY).toFixed(4) : 0);
-  /* mobile: stretch hero scroll range so copy fades later */
-  var hpDen = heroH * (S.vw < 900 ? 1.75 : .85);
-  hero.style.setProperty('--hp', reduce ? 0 : clamp(y/Math.max(hpDen, 1), 0, 1).toFixed(4));
+  /* mobile: slower hero fade so copy stays readable longer */
+  var hpDen = heroH * (S.vw < 900 ? 1.75 : 0.85);
+  hero.style.setProperty('--hp', reduce ? 0 : clamp(y/Math.max(hpDen,1), 0, 1).toFixed(4));
 
-  /* scroll-linked reveal */
   for(var i=0;i<scrub.length;i++){
     var s = scrub[i], top = s.top - y;
     if(reduce){ if(s.last !== 1){ s.el.style.setProperty('--p', 1); s.cur = 1; s.last = 1; } continue; }
@@ -421,20 +417,17 @@ function frame(now){
     if(val !== s.last){ s.el.style.setProperty('--p', val); s.last = val; }
   }
 
-  /* word reveal */
   if(words.length){
     var wp = reduce ? 1 : clamp((S.vh*.88 - (wordTop - y))/(S.vh*.42 + wordH*.5), 0, 1), n = words.length, tt = wp*(n + 5);
     for(var k=0;k<n;k++){ var wv = Math.round(clamp(tt - k, 0, 1)*20)/20; if(wv !== words[k].v){ words[k].el.style.setProperty('--w', wv); words[k].v = wv; } }
   }
 
-  /* timeline */
   var tp = reduce ? 1 : clamp((S.vh*.7 - (tlTop - y))/tlH, 0, 1), tpv = Math.round(tp*1000)/1000;
   if(tpv !== tlLast){
     tlLast = tpv; tl.style.setProperty('--tp', tpv);
     steps.forEach(function(st, idx){ st.classList.toggle('lit', tpv >= (idx/(steps.length-1))*.97 - .001 && tpv > 0.02); });
   }
 
-  /* marquee: speeds up and skews with scroll velocity, reverses on scroll-up */
   if(!reduce){
     if(Math.abs(S.vel) > 40) mqDir = S.vel > 0 ? 1 : -1;
     mqPos = (mqPos + mqDir*(46 + Math.min(Math.abs(S.vel), 3500)*.09)*dt) % mqW; if(mqPos < 0) mqPos += mqW;
@@ -442,7 +435,6 @@ function frame(now){
     mq.style.transform = 'translate3d('+(-mqPos)+'px,0,0) skewX('+mqSkew.toFixed(2)+'deg)';
   }
 
-  /* work slide laptop tilt follows scroll */
   var wsec = secs.portfolio; if(wsec){ var wpv = clamp((y + S.vh - wsec.top)/(wsec.h + S.vh), 0, 1).toFixed(3); root.style.setProperty('--wp', wpv); }
 
   if(GL) GL.update(t, dt);
@@ -455,7 +447,7 @@ var preloader = $('#preloader');
 function hidePreloader(){ if(!preloader) return; preloader.classList.add('hide'); setTimeout(function(){ if(preloader && preloader.parentNode) preloader.parentNode.removeChild(preloader); }, 700); }
 setTimeout(hidePreloader, reduce ? 150 : 900);
 
-/* ---------- custom cursor (fine pointer + hover capable only) ---------- */
+/* ---------- custom cursor ---------- */
 var fineHover = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
 if(fineHover){
   root.classList.add('has-cursor');
@@ -477,7 +469,7 @@ if(fineHover){
     var t = e.target;
     if(t.closest('input,textarea,select,[contenteditable="true"]')) setCursorMode('on-text');
     else if(t.closest('.btn-pri')) setCursorMode('on-btn');
-    else if(t.closest('.btn,.arrow-btn,button,[role="button"],.chip-btn,summary,.burger')) setCursorMode('on');
+    else if(t.closest('.btn,.arrow-btn,button,[role="button"],.chip-btn,summary,.faq-q,.burger')) setCursorMode('on');
     else if(t.closest('a')) setCursorMode('on-link');
     else if(t.closest('.carousel,.track,.work-slide,.svc,.plan,.post')) setCursorMode('on-drag');
     else setCursorMode('default');
@@ -487,7 +479,6 @@ if(fineHover){
   window.addEventListener('mouseleave', function(){ cDot.style.opacity = 0; cRing.style.opacity = 0; curShown = false; setCursorMode('default'); });
   (function ringLoop(){ rx += (cx-rx)*.18; ry += (cy-ry)*.18; cRing.style.transform = 'translate(-50%,-50%) translate('+rx+'px,'+ry+'px)'; requestAnimationFrame(ringLoop); })();
 
-  /* magnetic pull for primary buttons */
   if(!reduce){
     $$('.btn-pri').forEach(function(b){
       b.addEventListener('pointermove', function(e){
