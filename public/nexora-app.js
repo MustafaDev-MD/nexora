@@ -195,7 +195,7 @@ var GL = null;
 function initGL(){
   if(typeof THREE === 'undefined') return null;
   var cv = $('#gl'), renderer;
-  try{ renderer = new THREE.WebGLRenderer({canvas:cv, alpha:true, antialias: S.vw > 700, powerPreference:'high-performance'}); }catch(e){ return null; }
+  try{ renderer = new THREE.WebGLRenderer({canvas:cv, alpha:true, antialias: S.vw > 900, powerPreference:'high-performance'}); }catch(e){ return null; }
   if(!renderer || !renderer.getContext()) return null;
   renderer.setClearColor(0x000000, 0);
   var scene = new THREE.Scene(), FOV = 32;
@@ -285,7 +285,7 @@ function initGL(){
   });
 
   function resize(){
-    var dpr = Math.min(window.devicePixelRatio || 1, S.vw < 700 ? 1.5 : 2);
+    var dpr = Math.min(window.devicePixelRatio || 1, S.vw < 900 ? 1.15 : 1.5);
     renderer.setPixelRatio(dpr); renderer.setSize(S.vw, S.vh, false);
     camera.aspect = S.vw/S.vh; camera.fov = FOV;
     camera.position.z = (S.vh/2)/Math.tan(FOV/2*Math.PI/180);
