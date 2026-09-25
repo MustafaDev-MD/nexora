@@ -68,7 +68,7 @@ var tl = $('#tl'), steps = $$('.step', tl), tlTop = 0, tlH = 1, tlLast = -1;
 var hero = $('[data-hero]'), heroH = 1, heroTop = 0;
 var orbAnchor = $('#orbAnchor'), A = {hero:{cx:0,cy:0,w:1}, cta:{cx:0,cy:0,w:1,alpha:1}};
 var ctaEl = $('#cta');
-var secIds = ['home','about','services','portfolio','process','testimonials','blog','contact'];
+var secIds = ['home','about','services','portfolio','process','testimonials','pricing','faq','blog','contact'];
 var secs = {};
 
 function measure(){
@@ -404,7 +404,9 @@ function frame(now){
 
   /* progress bar + hero scroll var */
   root.style.setProperty('--sp', S.maxY ? (y/S.maxY).toFixed(4) : 0);
-  hero.style.setProperty('--hp', reduce ? 0 : clamp(y/(heroH*.85), 0, 1).toFixed(4));
+  /* mobile: stretch hero scroll range so copy fades later */
+  var hpDen = heroH * (S.vw < 900 ? 1.75 : .85);
+  hero.style.setProperty('--hp', reduce ? 0 : clamp(y/Math.max(hpDen, 1), 0, 1).toFixed(4));
 
   /* scroll-linked reveal */
   for(var i=0;i<scrub.length;i++){

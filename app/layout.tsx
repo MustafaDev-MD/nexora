@@ -5,7 +5,16 @@ import './globals.css'
 export const metadata: Metadata = {
   title: SITE.title,
   description: SITE.description,
-  themeColor: '#05050d',
+  themeColor: '#181836',
+  icons: {
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/apple-touch-icon.svg', type: 'image/svg+xml' }],
+  },
+  openGraph: {
+    title: SITE.title,
+    description: SITE.description,
+    type: 'website',
+  },
 }
 
 export const viewport: Viewport = {
