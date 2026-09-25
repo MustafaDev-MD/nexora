@@ -195,7 +195,7 @@ var GL = null;
 function initGL(){
   if(typeof THREE === 'undefined') return null;
   var cv = $('#gl'), renderer;
-  try{ renderer = new THREE.WebGLRenderer({canvas:cv, alpha:true, antialias: S.vw > 900, powerPreference:'high-performance'}); }catch(e){ return null; }
+  try{ renderer = new THREE.WebGLRenderer({canvas:cv, alpha:true, antialias: false, powerPreference:'high-performance'}); }catch(e){ return null; }
   if(!renderer || !renderer.getContext()) return null;
   renderer.setClearColor(0x000000, 0);
   var scene = new THREE.Scene(), FOV = 32;
@@ -214,7 +214,7 @@ function initGL(){
     vertexShader:'varying vec3 vN; varying vec3 vV; void main(){ vN = normalize(normalMatrix*normal); vec4 mv = modelViewMatrix*vec4(position,1.0); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }',
     fragmentShader:'varying vec3 vN; varying vec3 vV; uniform float uA; void main(){ float d = max(dot(vN,vV),0.0); float f = pow(1.0-d,2.6); vec3 inner = mix(vec3(.20,.08,.70), vec3(.40,.72,1.0), pow(d,4.0)); vec3 col = inner + vec3(.30,.50,1.0)*f*.9; gl_FragColor = vec4(col, uA); }'
   });
-  var core = new THREE.Mesh(new THREE.SphereGeometry(.38, 48, 32), coreMat); orb.add(core);
+  var core = new THREE.Mesh(new THREE.SphereGeometry(.38, 32, 24), coreMat); orb.add(core);
   var hc = doc.createElement('canvas'); hc.width = hc.height = 128;
   var hx = hc.getContext('2d'), hg = hx.createRadialGradient(64,64,4,64,64,64);
   hg.addColorStop(0,'rgba(140,110,255,.95)'); hg.addColorStop(.35,'rgba(100,70,255,.35)'); hg.addColorStop(1,'rgba(80,60,255,0)');
@@ -231,17 +231,17 @@ function initGL(){
     var g = new THREE.Group(); g.rotation.set(c.r[0], c.r[1], c.r[2]);
     var col1 = new THREE.Color(c.c1), col2 = new THREE.Color(c.c2);
     for(var k=0;k<c.n;k++){
-      var u = k/(c.n-1), rad = c.R*(1+(u-.5)*.18), off = (u-.5)*c.w*2, pts = new Float32Array(121*3);
-      for(var j=0;j<=120;j++){ var a = j/120*Math.PI*2; pts[j*3] = Math.cos(a)*rad; pts[j*3+1] = Math.sin(a)*rad; pts[j*3+2] = off*Math.sin(a*2); }
+      var u = k/(c.n-1), rad = c.R*(1+(u-.5)*.18), off = (u-.5)*c.w*2, pts = new Float32Array(81*3);
+      for(var j=0;j<=80;j++){ var a = j/80*Math.PI*2; pts[j*3] = Math.cos(a)*rad; pts[j*3+1] = Math.sin(a)*rad; pts[j*3+2] = off*Math.sin(a*2); }
       var geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pts,3));
       var m = reg(new THREE.LineBasicMaterial({color:col1.clone().lerp(col2,u), transparent:true, opacity:.3, blending:THREE.AdditiveBlending, depthWrite:false}), .3);
       g.add(new THREE.LineLoop(geo, m));
     }
-    var tube = new THREE.Mesh(new THREE.TorusGeometry(c.R, .009, 6, 140), reg(new THREE.MeshBasicMaterial({color:c.c2, transparent:true, opacity:.55, blending:THREE.AdditiveBlending, depthWrite:false}), .55));
+    var tube = new THREE.Mesh(new THREE.TorusGeometry(c.R, .009, 5, 80), reg(new THREE.MeshBasicMaterial({color:c.c2, transparent:true, opacity:.55, blending:THREE.AdditiveBlending, depthWrite:false}), .55));
     g.add(tube);
     orb.add(g); return {g:g, sp:c.sp};
   });
-  var pc = 170, pp = new Float32Array(pc*3);
+  var pc = 100, pp = new Float32Array(pc*3);
   for(var q=0;q<pc;q++){ var th = Math.random()*6.283, ph = Math.acos(2*Math.random()-1), rr = .7 + Math.random()*.9; pp[q*3] = rr*Math.sin(ph)*Math.cos(th); pp[q*3+1] = rr*Math.sin(ph)*Math.sin(th); pp[q*3+2] = rr*Math.cos(ph); }
   var pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(pp,3));
   var pts = new THREE.Points(pg, reg(new THREE.PointsMaterial({color:0xbcd2ff, size:2.2, sizeAttenuation:false, transparent:true, opacity:.8, blending:THREE.AdditiveBlending, depthWrite:false}), .8));
@@ -285,7 +285,7 @@ function initGL(){
   });
 
   function resize(){
-    var dpr = Math.min(window.devicePixelRatio || 1, S.vw < 900 ? 1.15 : 1.5);
+    var dpr = Math.min(window.devicePixelRatio || 1, 1.25);
     renderer.setPixelRatio(dpr); renderer.setSize(S.vw, S.vh, false);
     camera.aspect = S.vw/S.vh; camera.fov = FOV;
     camera.position.z = (S.vh/2)/Math.tan(FOV/2*Math.PI/180);
@@ -437,10 +437,17 @@ function frame(now){
 
   var wsec = secs.portfolio; if(wsec){ var wpv = clamp((y + S.vh - wsec.top)/(wsec.h + S.vh), 0, 1).toFixed(3); root.style.setProperty('--wp', wpv); }
 
-  /* when idle (almost no scroll), render GL every 2nd frame to cut main-thread load */
+  /* frame budget: skip GL if last frame was heavy; half-rate when idle */
   if(GL){
-    if(Math.abs(S.vel) > 8 || !GL._tick){ GL.update(t, dt); GL._tick = 1; }
-    else { GL._tick = 0; }
+    var heavy = dt > 0.028;
+    if(!heavy && (Math.abs(S.vel) > 12 || !GL._tick)){
+      var t0 = performance.now();
+      GL.update(t, dt);
+      GL._cost = performance.now() - t0;
+      GL._tick = 1;
+    } else {
+      GL._tick = 0;
+    }
   }
 }
 function loop(now){ frame(now); if(!doc.hidden) requestAnimationFrame(loop); else running = false; }
