@@ -72,7 +72,9 @@ export default function AboutPage() {
               {STATS.map((s) => (
                 <li key={s.label}>
                   <span className="num">
-                    {s.decimals != null ? s.value.toFixed(s.decimals) : s.value}
+                    {"decimals" in s && s.decimals != null
+                      ? s.value.toFixed(s.decimals)
+                      : s.value}
                     {s.suffix}
                   </span>
                   <span>{s.label}</span>
